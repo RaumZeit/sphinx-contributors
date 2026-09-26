@@ -34,6 +34,74 @@ def _github_get_paginated(url):
         url = r.links.get("next", {}).get("url")
     return results
 
+class Repository:
+    def __init__(self, url, provider = "github", include = [], exclude = []):
+        self.url = url
+        self.provider = provider
+        self.include = include
+        self.exclude = exclude
+
+    def get_contributors(self):
+        """
+        Query github reposirtory to get list of contributors
+        """
+        contributors = {}
+
+        try:
+            results = _github_get_paginated(
+                "https://api.github.com/repos/"
+                + self.url
+                + "/contributors?per_page=100"
+            )
+
+            for c in results:
+                login = c.get("login")
+
+                if login in self.exclude:
+                    continue
+
+                contributors[login] = Contributor(
+                        login,
+                        c.get("html_url"),
+                        c.get("contributions"),
+                        c.get("avatar_url"),
+                    )
+        except Exception:
+            logger.warning("Error while retrieving data from github repository " + self.url)
+
+        # add all auxiliary contributors
+        for login in self.include:
+            # skip if we already have this contributor in our list
+            if login in contributors:
+                continue
+
+            try:
+                user = requests.get(
+                    "https://api.github.com/users/" + login,
+                    headers=_github_headers(),
+                ).json()
+                contributors[login] = Contributor(
+                        login,
+                        user.get("html_url", "https://github.com/" + login),
+                        0,
+                        user.get("avatar_url", ""),
+                    )
+            except Exception:
+                logger.warning("Could not fetch auxiliary github user: " + login)
+
+        # query contributor names from logins
+        for login in contributors.keys():
+            try:
+                user = requests.get(
+                    "https://api.github.com/users/" + login,
+                    headers=_github_headers(),
+                ).json()
+                contributors[login].name = user.get("name") or ""
+            except Exception:
+                pass
+
+        return contributors
+
 
 class ContributorsDirective(Directive):
     has_content = True
@@ -50,6 +118,7 @@ class ContributorsDirective(Directive):
         "limit": directives.positive_int,
         "names": directives.flag,
         "order": directives.unchanged,
+        "provider": directives.unchanged,
     }
 
     def run(self):
@@ -58,6 +127,7 @@ class ContributorsDirective(Directive):
         class_name = self.options.get("class_name", "sphinx-contributors")
         show_contributions = "contributions" in self.options
         show_names = "names" in self.options
+        # compile list of additional users to exclude/exclude
         exclude = [
             _exclude.strip() for _exclude in self.options.get("exclude", "").split(",")
         ]
@@ -68,73 +138,30 @@ class ContributorsDirective(Directive):
         ]
         limit = self.options.get("limit", None)
         order = self.options.get("order", "DESC") == "DESC"
+        provider = self.options.get("provider", "github")
 
-        repositories = self.arguments[0].split()
         contributors_by_login = {}
-        for repo_name in repositories:
-            try:
-                results = _github_get_paginated(
-                    "https://api.github.com/repos/"
-                    + repo_name
-                    + "/contributors?per_page=100"
-                )
-                for c in results:
-                    login = c.get("login")
-                    if login in contributors_by_login:
-                        if show_contributions:
-                            contributors_by_login[login].contributions += c.get(
-                                "contributions", 0
-                            )
-                    else:
-                        contributors_by_login[login] = Contributor(
-                            login,
-                            c.get("html_url"),
-                            c.get("contributions") if show_contributions else 0,
-                            c.get("avatar_url") if use_avatars else "",
-                        )
-            except Exception:
-                logger.warning("The repository " + repo_name + " does not exist.")
-        contributors = list(contributors_by_login.values())
 
-        existing_logins = {c.login for c in contributors}
-        for login in include:
-            if login in existing_logins:
-                continue
-            try:
-                user = requests.get(
-                    "https://api.github.com/users/" + login,
-                    headers=_github_headers(),
-                ).json()
-                contributors.append(
-                    Contributor(
-                        login,
-                        user.get("html_url", "https://github.com/" + login),
-                        0,
-                        user.get("avatar_url", "") if use_avatars else "",
-                    )
-                )
-            except Exception:
-                logger.warning("Could not fetch user: " + login)
+        for r in self.arguments[0].split():
+            repo = Repository(r, provider = provider, include = include, exclude = exclude)
+            for k, v in repo.get_contributors().items():
+                if k not in contributors_by_login:
+                    contributors_by_login[k] = v
+                else:
+                    contributors_by_login[k].update(v)
+
+        contributors = list(contributors_by_login.values())
 
         repo = ContributorsRepository(
             contributors,
             reverse=order,
             limit=limit,
             exclude=exclude,
+            show_names = show_names,
+            show_contributions = show_contributions,
             avatars=use_avatars,
-            avatars_only=avatars_only,
+            avatars_only=avatars_only
         )
-
-        if show_names:
-            for contributor in repo.contributors:
-                try:
-                    user = requests.get(
-                        "https://api.github.com/users/" + contributor.login,
-                        headers=_github_headers(),
-                    ).json()
-                    contributor.name = user.get("name") or ""
-                except Exception:
-                    pass
 
         return [repo.build(class_name)]
 

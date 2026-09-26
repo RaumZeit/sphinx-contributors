@@ -20,7 +20,8 @@ def test_contributor_build() -> None:
     Initializing a contributor.
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=10).build(
-        _CLASS_NAME
+        _CLASS_NAME,
+        show_contributions = True
     )
     assert contributor.astext() == "dgarcia360\n\n10 contributions"
 
@@ -31,7 +32,10 @@ def test_contributor_build_with_name() -> None:
     """
     contributor = Contributor(
         "dgarcia360", "http://#", contributions=5, name="David Garcia"
-    ).build(_CLASS_NAME)
+    ).build(
+        _CLASS_NAME,
+        show_contributions = True
+    )
     assert contributor.astext() == "David Garcia\n\n5 contributions"
 
 
@@ -40,7 +44,8 @@ def test_contributor_build_with_empty_name() -> None:
     A contributor with an empty name falls back to login.
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=5, name="").build(
-        _CLASS_NAME
+        _CLASS_NAME,
+        show_contributions = True
     )
     assert contributor.astext() == "dgarcia360\n\n5 contributions"
 
@@ -49,7 +54,10 @@ def test_contributor_build_with_no_contribution() -> None:
     """
     Create a contributor with no contributions.
     """
-    contributor = Contributor("dgarcia360", "http://#").build(_CLASS_NAME)
+    contributor = Contributor("dgarcia360", "http://#").build(
+        _CLASS_NAME,
+        show_contributions = True
+    )
     assert contributor.astext() == "dgarcia360"
 
 
@@ -58,7 +66,8 @@ def test_contributor_build_with_one_contribution() -> None:
     Create a contributor with one contribution.
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=1).build(
-        _CLASS_NAME
+        _CLASS_NAME,
+        show_contributions = True
     )
     assert contributor.astext() == "dgarcia360\n\n1 contribution"
 
@@ -71,7 +80,11 @@ def test_contributor_repository_build() -> None:
         Contributor("dgarcia360", "http://#", contributions=2),
         Contributor("user", "http://#", contributions=1),
     ]
-    contributor_repository = ContributorsRepository(contributors, reverse=True).build(
+    contributor_repository = ContributorsRepository(
+        contributors,
+        reverse=True,
+        show_contributions = True
+    ).build(
         _CLASS_NAME
     )
     assert (
@@ -99,7 +112,11 @@ def test_contributor_repository_build_order_desc() -> None:
         Contributor("user", "http://#", contributions=1),
         Contributor("dgarcia360", "http://#", contributions=2),
     ]
-    contributor_repository = ContributorsRepository(contributors, reverse=True).build(
+    contributor_repository = ContributorsRepository(
+        contributors,
+        reverse=True,
+        show_contributions = True
+    ).build(
         _CLASS_NAME
     )
     assert (
@@ -116,7 +133,11 @@ def test_contributor_repository_build_order_asc() -> None:
         Contributor("dgarcia360", "http://#", contributions=2),
         Contributor("user", "http://#", 1),
     ]
-    contributor_repository = ContributorsRepository(contributors, reverse=False).build(
+    contributor_repository = ContributorsRepository(
+        contributors,
+        reverse=False,
+        show_contributions = True
+    ).build(
         _CLASS_NAME
     )
     assert (
@@ -134,8 +155,13 @@ def test_contributor_repository_build_with_limit() -> None:
         Contributor("user", "http://#", contributions=1),
     ]
     contributor_repository = ContributorsRepository(
-        contributors, reverse=True, limit=1
-    ).build(_CLASS_NAME)
+        contributors,
+        reverse=True,
+        limit=1,
+        show_contributions = True
+    ).build(
+        _CLASS_NAME
+    )
     assert contributor_repository.astext() == "dgarcia360\n\n2 contributions"
 
 
@@ -150,8 +176,14 @@ def test_contributor_repository_build_exclude() -> None:
     ]
     exclude = "sphinx,user"
     contributor_repository = ContributorsRepository(
-        contributors, reverse=True, limit=10, exclude=exclude
-    ).build(_CLASS_NAME)
+        contributors,
+        reverse=True,
+        limit=10,
+        exclude=exclude,
+        show_contributions = True
+    ).build(
+        _CLASS_NAME
+    )
     assert contributor_repository.astext() == "dgarcia360\n\n2 contributions"
 
 
@@ -194,7 +226,14 @@ def test_multiple_repositories(mock_get) -> None:
         },
     ]
     mock_repo2.links = {}
-    mock_get.side_effect = [mock_repo1, mock_repo2]
+    mock_get.side_effect = [
+        mock_repo1,
+        MagicMock(), # skip request for 'shared'
+        MagicMock(), # skip request for 'only_repo1"
+        mock_repo2,
+        MagicMock(), # skip request for 'shared'
+        MagicMock()  # skip request for 'only_repo2"
+    ]
 
     directive = ContributorsDirective.__new__(ContributorsDirective)
     directive.arguments = ["owner/repo1 owner/repo2"]
@@ -229,7 +268,10 @@ def test_single_repository_unchanged(mock_get) -> None:
         },
     ]
     mock_response.links = {}
-    mock_get.return_value = mock_response
+    mock_get.side_effect = [
+        mock_response,
+        MagicMock() # skip request for 'user1'
+    ]
 
     directive = ContributorsDirective.__new__(ContributorsDirective)
     directive.arguments = ["owner/repo"]
@@ -242,7 +284,7 @@ def test_single_repository_unchanged(mock_get) -> None:
     result = directive.run()
     text = result[0].astext()
     assert "user1" in text
-    mock_get.assert_called_once()
+    mock_get.assert_called()
 
 
 @patch("sphinx_contributors.requests.get")
@@ -267,7 +309,11 @@ def test_include_adds_new_contributors(mock_get) -> None:
         "html_url": "https://github.com/newuser",
         "avatar_url": "https://github.com/newuser.png",
     }
-    mock_get.side_effect = [mock_repo_response, mock_user_response]
+    mock_get.side_effect = [
+        mock_repo_response,
+        MagicMock(), # skip request for 'existing'
+        mock_user_response
+    ]
 
     directive = ContributorsDirective.__new__(ContributorsDirective)
     directive.arguments = ["owner/repo"]
@@ -369,4 +415,4 @@ def test_contributor_directive(mock_get, tmp_path: Path) -> None:
     app.build()
 
     assert app.statuscode == 0
-    mock_get.assert_called_once()
+    mock_get.assert_called()

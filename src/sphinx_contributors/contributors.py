@@ -13,7 +13,14 @@ class Contributor:
     def display_name(self):
         return self.name or self.login
 
-    def build(self, class_name, avatars_only=False):
+    def update(self, data):
+        if isinstance(data, Contributor) and self.login == data.login:
+            self.contributions += data.contributions
+            self.url = data.url if data.url else self.url
+            self.avatar_url = data.url if data.avatar_url else self.avatar_url
+            self.name = data.name if data.name else self.name
+
+    def build(self, class_name, show_avatar = False, avatars_only = False, show_login = False, show_contributions = False):
         container_class = class_name + "_contributor"
         image_class = container_class + "__image"
         username_class = container_class + "__username"
@@ -21,24 +28,26 @@ class Contributor:
 
         node_container = nodes.container(classes=[container_class])
 
-        if self.avatar_url:
-            node_image = nodes.image(
-                uri=self.avatar_url,
-                alt=self.display_name,
-                classes=[image_class],
-            )
-            node_image_link = nodes.reference("", refuri=self.url)
-            node_image_link += node_image
-            node_container += node_image_link
+        if show_avatar:
+            if self.avatar_url:
+                node_image = nodes.image(
+                    uri=self.avatar_url,
+                    alt=self.display_name if not show_login else self.login,
+                    classes=[image_class],
+                )
+                node_image_link = nodes.reference("", refuri=self.url)
+                node_image_link += node_image
+                node_container += node_image_link
 
-        if avatars_only:
-            return node_container
+            if avatars_only:
+                return node_container
 
         node_username = nodes.paragraph(classes=[username_class])
-        node_username += nodes.reference(text=self.display_name, refuri=self.url)
+        node_username += nodes.reference(text=self.display_name if not show_login else self.login,
+                                         refuri=self.url)
         node_container += node_username
 
-        if self.contributions:
+        if show_contributions and self.contributions:
             node_contributions = nodes.paragraph(classes=[contributions_class])
             node_contributions += nodes.Text(
                 str(self.contributions)
@@ -52,11 +61,13 @@ class ContributorsRepository:
     def __init__(
         self,
         contributors,
-        reverse=True,
-        limit=None,
-        exclude=[],
-        avatars=False,
-        avatars_only=False,
+        reverse = True,
+        limit = None,
+        exclude = [],
+        avatars = False,
+        avatars_only = False,
+        show_names = False,
+        show_contributions = False,
     ):
         sorted_contributors = sorted(
             [c for c in contributors if c.login not in exclude],
@@ -68,6 +79,8 @@ class ContributorsRepository:
         )
         self.avatars = avatars
         self.avatars_only = avatars_only
+        self.show_names = show_names
+        self.show_contributions = show_contributions
 
     def build(self, class_name):
         list_class = class_name + "_list"
@@ -80,7 +93,13 @@ class ContributorsRepository:
 
         for contributor in self.contributors:
             node_item = nodes.list_item(classes=[item_class])
-            node_item += contributor.build(class_name, avatars_only=self.avatars_only)
+            node_item += contributor.build(
+                                        class_name,
+                                        show_avatar = self.avatars,
+                                        avatars_only=self.avatars_only,
+                                        show_login = not self.show_names,
+                                        show_contributions = self.show_contributions
+                                      )
             node_list += node_item
         node_container += node_list
         return node_container
