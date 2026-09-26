@@ -6,6 +6,7 @@ Contributors extension for Sphinx.
 
 __version__ = "0.3.0"
 
+import os
 from pathlib import Path
 
 from docutils.parsers.rst import Directive, directives
@@ -53,8 +54,15 @@ class ContributorsDirective(Directive):
 
         contributors_by_login = {}
 
+        rst_file = self.state_machine.document.attributes['source']
+        rst_dir = os.path.dirname(rst_file)
+
         for r in self.arguments[0].split():
-            repo = Repository(r, provider = provider, include = include, exclude = exclude)
+            repo = Repository(r,
+                              provider = provider,
+                              include = include,
+                              exclude = exclude,
+                              rst_dir = rst_dir)
             for k, v in repo.get_contributors().items():
                 if k not in contributors_by_login:
                     contributors_by_login[k] = v

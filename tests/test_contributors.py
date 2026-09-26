@@ -417,3 +417,52 @@ def test_contributor_directive(mock_get, tmp_path: Path) -> None:
 
     assert app.statuscode == 0
     mock_get.assert_called()
+
+
+@patch("sphinx_contributors.repository._git_shortlog")
+def test_contributor_directive_local(mock_git, tmp_path: Path) -> None:
+    """
+    The ``contributors`` directive runs with no errors.
+
+    Uses a local repository 
+    """
+    mock_git.return_value = "  4584\tRonny Lorenz <ronny@tbi.univie.ac.at>"
+
+    source_directory = tmp_path / "source"
+    source_directory.mkdir()
+    source_file = source_directory / "index.rst"
+    conf_py = source_directory / "conf.py"
+    conf_py.touch()
+    source_file.touch()
+    conf_py_content = dedent(
+        """\
+        extensions = ['sphinx_contributors']
+        """,
+    )
+    conf_py.write_text(conf_py_content)
+    source_file_content = dedent(
+        """\
+        Test
+        ====
+
+        .. contributors:: .
+            :provider: local
+        """,
+    )
+    source_file.write_text(source_file_content)
+    destination_directory = tmp_path / "destination"
+    doctree_directory = tmp_path / "doctrees"
+
+    app = Sphinx(
+        srcdir=str(source_directory),
+        confdir=str(source_directory),
+        outdir=str(destination_directory),
+        doctreedir=str(doctree_directory),
+        buildername="html",
+        warningiserror=False, # Can't instantiate Sphinx() twice without warnings, see https://github.com/sphinx-doc/sphinx/issues/13608
+        freshenv = True
+    )
+    app.build(force_all = True)
+
+    assert app.statuscode == 0
+    mock_git.assert_called()

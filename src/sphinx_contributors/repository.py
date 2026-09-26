@@ -1,10 +1,15 @@
 import os
+import re
 import requests
+import subprocess
+
 from sphinx.util import logging
 
 from .contributors import Contributor
 
 logger = logging.getLogger(__name__)
+
+email_pat = re.compile(r"(.*)\s+\<(.*)\>")
 
 
 def _github_headers():
@@ -70,7 +75,7 @@ def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 
                     email         = email
                 )
     except Exception as err:
-        logger.warning(f"Error while retrieving data from github repository \"{self.url}\" {err=}, {type(err)=}")
+        logger.warning(f"Error while retrieving data from github repository \"{repo_name}\" {err=}, {type(err)=}")
 
     return contributors
 
@@ -95,12 +100,47 @@ def get_github_user_data(login):
     return None
 
 
+def _git_shortlog(repo_name):
+    result = subprocess.run(['git',
+                             '-C', repo_name,
+                             'shortlog',
+                             '--summary',
+                             '--numbered',
+                             '--email'
+                            ],
+                            stdout=subprocess.PIPE)
+
+    return result.stdout.decode()
+
+
+def get_local_contributors(repo_name, exclude = []):
+    contributors = {}
+
+    for r in _git_shortlog(repo_name).split("\n"):
+        rr = r.strip().split("\t")
+        if len(rr) > 1:
+            count, contributor = r.strip().split("\t")
+            m = email_pat.match(contributor)
+            if m:
+                name, email = m.group(1), m.group(2)
+                contributors[email] = Contributor(
+                    login         = email,
+                    url           = "",
+                    contributions = int(count),
+                    name          = name,
+                    email         = email
+                )
+
+    return contributors
+
+
 class Repository:
-    def __init__(self, url, provider = "github", include = [], exclude = []):
+    def __init__(self, url, provider = "github", include = [], exclude = [], rst_dir = "."):
         self.url = url
         self.provider = provider
         self.include = include
         self.exclude = exclude
+        self.rst_dir = rst_dir
 
     def get_contributors(self):
         """
@@ -113,25 +153,28 @@ class Repository:
         if self.provider == "github":
             contributors = get_github_contributors(self.url, self.exclude)
             get_user_data = get_github_user_data
+        elif self.provider == "local":
+            contributors = get_local_contributors(os.path.join(self.rst_dir, self.url), self.exclude)
 
-        # query contributor names from logins
-        for login in contributors.keys():
-            d = get_user_data(login)
-            if d:
-                contributors[login].update(d)
+        if callable(get_user_data):
+            # get more contributor data
+            for login in contributors.keys():
+                d = get_user_data(login)
+                if d:
+                    contributors[login].update(d)
 
-         # add all auxiliary contributors
-        for login in self.include:
-            # skip if we already have this contributor in our list
-            if login in contributors:
-                continue
+             # add all auxiliary contributors
+            for login in self.include:
+                # skip if we already have this contributor in our list
+                if login in contributors:
+                    continue
 
-            d = get_github_user_data(login)
+                d = get_github_user_data(login)
 
-            if d:
-                contributors[login] = d
-            else:
-                logger.warning("Could not fetch data for auxiliary user: " + login)
+                if d:
+                    contributors[login] = d
+                else:
+                    logger.warning("Could not fetch data for auxiliary user: " + login)
 
         return contributors
 
