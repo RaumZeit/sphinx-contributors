@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 from sphinx.application import Sphinx
 
-from sphinx_contributors import Contributor, ContributorsRepository
+from sphinx_contributors.contributors import Contributor, ContributorsRepository
 
 _CLASS_NAME = "sphinx_contributors"
 
@@ -187,7 +187,7 @@ def test_contributor_repository_build_exclude() -> None:
     assert contributor_repository.astext() == "dgarcia360\n\n2 contributions"
 
 
-@patch("sphinx_contributors.requests.get")
+@patch("sphinx_contributors.repository.requests.get")
 def test_multiple_repositories(mock_get) -> None:
     """
     Multiple repositories merge contributors and sum contributions.
@@ -245,13 +245,14 @@ def test_multiple_repositories(mock_get) -> None:
 
     result = directive.run()
     text = result[0].astext()
+    mock_get.assert_called()
     assert "shared" in text
     assert "8 contributions" in text
     assert "only_repo1" in text
     assert "only_repo2" in text
 
 
-@patch("sphinx_contributors.requests.get")
+@patch("sphinx_contributors.repository.requests.get")
 def test_single_repository_unchanged(mock_get) -> None:
     """
     A single repository still works as before.
@@ -287,7 +288,7 @@ def test_single_repository_unchanged(mock_get) -> None:
     mock_get.assert_called()
 
 
-@patch("sphinx_contributors.requests.get")
+@patch("sphinx_contributors.repository.requests.get")
 def test_include_adds_new_contributors(mock_get) -> None:
     """
     The include option adds contributors not already in the list.
@@ -329,7 +330,7 @@ def test_include_adds_new_contributors(mock_get) -> None:
     assert "newuser" in text
 
 
-@patch("sphinx_contributors.requests.get")
+@patch("sphinx_contributors.repository.requests.get")
 def test_include_does_not_duplicate_existing(mock_get) -> None:
     """
     The include option does not duplicate a contributor already returned by the API.
@@ -361,7 +362,7 @@ def test_include_does_not_duplicate_existing(mock_get) -> None:
     assert text.count("existing") == 1
 
 
-@patch("sphinx_contributors.requests.get")
+@patch("sphinx_contributors.repository.requests.get")
 def test_contributor_directive(mock_get, tmp_path: Path) -> None:
     """
     The ``contributors`` directive runs with no errors.
