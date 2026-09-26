@@ -2,12 +2,13 @@ from docutils import nodes
 
 
 class Contributor:
-    def __init__(self, login, url, contributions=0, avatar_url="", name=""):
+    def __init__(self, login, url, contributions=0, avatar_url="", name="", email=""):
         self.contributions = contributions
         self.login = login
         self.url = url
         self.avatar_url = avatar_url
         self.name = name
+        self.email = email
 
     @property
     def display_name(self):
@@ -19,6 +20,7 @@ class Contributor:
             self.url = data.url if data.url else self.url
             self.avatar_url = data.url if data.avatar_url else self.avatar_url
             self.name = data.name if data.name else self.name
+            self.email = data.email if data.email else self.email
 
     def build(self, class_name, show_avatar = False, avatars_only = False, show_login = False, show_contributions = False):
         container_class = class_name + "_contributor"
