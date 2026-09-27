@@ -6,14 +6,50 @@ Contributors extension for Sphinx.
 
 __version__ = "0.3.0"
 
+import copy
 import os
+from os import path
 from pathlib import Path
-
 from docutils.parsers.rst import Directive, directives
-from sphinx.util import logging
+from sphinx.util import logging, osutil
 
 from .contributors import ContributorsRepository
 from .repository import Repository
+
+
+DEFAULT_CONTRIBUTORS_CONF = {
+    "default_avatar" : "sc_user_avartar_default.svg",
+}
+
+
+def sc_path_static() -> str:
+    """Returns path to packaged static files"""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "_static"))
+
+
+def sc_path_static_append(app) -> None:
+    contributors_config = app.config.sphinx_contributors_conf
+
+    if contributors_config['default_avatar'] == DEFAULT_CONTRIBUTORS_CONF['default_avatar']:
+        contributors_config['default_avatar'] = Path(
+                                                os.path.relpath(
+                                                  os.path.join(sc_path_static(), contributors_config['default_avatar']),
+                                                  app.builder.srcdir
+                                                )
+                                             ).as_posix()
+
+
+def fill_contributors_conf_defaults(
+    app: Sphinx, config: Any, check_keys: bool = True
+) -> None:
+    """Handle user config"""
+    contributors_conf = copy.deepcopy(DEFAULT_CONTRIBUTORS_CONF)
+    contributors_conf.update(config.sphinx_contributors_conf)
+
+    config.sphinx_contributors_conf = contributors_conf
+
+    config.html_static_path.append(sc_path_static())
+
 
 class ContributorsDirective(Directive):
     has_content = True
@@ -34,6 +70,8 @@ class ContributorsDirective(Directive):
     }
 
     def run(self):
+        config = self.state.document.settings.env.config.sphinx_contributors_conf
+
         avatars_only = "avatars_only" in self.options
         use_avatars = "avatars" in self.options or avatars_only
         class_name = self.options.get("class_name", "sphinx-contributors")
@@ -62,7 +100,9 @@ class ContributorsDirective(Directive):
                               provider = provider,
                               include = include,
                               exclude = exclude,
-                              rst_dir = rst_dir)
+                              rst_dir = rst_dir,
+                              default_avatar = config["default_avatar"])
+
             for k, v in repo.get_contributors().items():
                 if k not in contributors_by_login:
                     contributors_by_login[k] = v
@@ -86,13 +126,17 @@ class ContributorsDirective(Directive):
 
 
 def setup(app):
+    app.add_config_value('sphinx_contributors_conf', DEFAULT_CONTRIBUTORS_CONF, 'html')
+
+    # Early filling of sphinx_gallery_conf defaults at config-inited
+    app.connect("config-inited", fill_contributors_conf_defaults, priority=10)
+    app.connect("builder-inited", sc_path_static_append)
+    #app.connect('env-updated', install_static_files)
+
     # Add directive
     app.add_directive("contributors", ContributorsDirective)
+
     # Add CSS
-    static_dir = str(Path(__file__).parent.joinpath("_static").absolute())
-    app.connect(
-        "builder-inited", (lambda app: app.config.html_static_path.append(static_dir))
-    )
     app.add_css_file("sphinx_contributors.css")
 
     return {

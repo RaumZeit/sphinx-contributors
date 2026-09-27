@@ -29,7 +29,7 @@ def _github_get_paginated(url):
     return results
 
 
-def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 100):
+def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 100, default_avatar = ""):
     """
     Get all contributors from a github repository
 
@@ -63,7 +63,7 @@ def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 
             html_url = c.get("html_url")
             contributions = c.get("contributions", 0)
             email = c.get("email", "")
-            avatar = c.get("avatar_url", "")
+            avatar = c.get("avatar_url", default_avatar)
             name = c.get("name", "")
 
             contributors[login] = Contributor(
@@ -80,7 +80,7 @@ def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 
     return contributors
 
 
-def get_github_user_data(login):
+def get_github_user_data(login, default_avatar = ""):
     try:
         user = requests.get(
             "https://api.github.com/users/" + login,
@@ -90,7 +90,7 @@ def get_github_user_data(login):
                     login         = login,
                     url           = user.get("html_url", "https://github.com/" + login),
                     contributions = 0,
-                    avatar_url    = user.get("avatar_url", ""),
+                    avatar_url    = user.get("avatar_url", default_avatar),
                     name          = user.get("name", ""),
                     email         = user.get("email", "")
                 )
@@ -113,7 +113,7 @@ def _git_shortlog(repo_name):
     return result.stdout.decode()
 
 
-def get_local_contributors(repo_name, exclude = []):
+def get_local_contributors(repo_name, exclude = [], default_avatar = ""):
     contributors = {}
 
     for r in _git_shortlog(repo_name).split("\n"):
@@ -128,19 +128,21 @@ def get_local_contributors(repo_name, exclude = []):
                     url           = "",
                     contributions = int(count),
                     name          = name,
-                    email         = email
+                    email         = email,
+                    avatar_url    = default_avatar
                 )
 
     return contributors
 
 
 class Repository:
-    def __init__(self, url, provider = "github", include = [], exclude = [], rst_dir = "."):
+    def __init__(self, url, provider = "github", include = [], exclude = [], rst_dir = ".", default_avatar = ""):
         self.url = url
         self.provider = provider
         self.include = include
         self.exclude = exclude
         self.rst_dir = rst_dir
+        self.default_avatar = default_avatar
 
     def get_contributors(self):
         """
@@ -151,15 +153,15 @@ class Repository:
         contributors = {}
 
         if self.provider == "github":
-            contributors = get_github_contributors(self.url, self.exclude)
+            contributors = get_github_contributors(self.url, self.exclude, self.default_avatar)
             get_user_data = get_github_user_data
         elif self.provider == "local":
-            contributors = get_local_contributors(os.path.join(self.rst_dir, self.url), self.exclude)
+            contributors = get_local_contributors(os.path.join(self.rst_dir, self.url), self.exclude, self.default_avatar)
 
         if callable(get_user_data):
             # get more contributor data
             for login in contributors.keys():
-                d = get_user_data(login)
+                d = get_user_data(login, self.default_avatar)
                 if d:
                     contributors[login].update(d)
 
@@ -169,7 +171,7 @@ class Repository:
                 if login in contributors:
                     continue
 
-                d = get_github_user_data(login)
+                d = get_user_data(login, self.default_avatar)
 
                 if d:
                     contributors[login] = d
