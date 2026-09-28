@@ -176,12 +176,14 @@ Avatars, real names, and contribution counts together:
 
    .. contributors:: ../../
       :provider: local
+      :contributions:
       :avatars:
       :names:
       :exclude: dependabot[bot]
 
 .. contributors:: ../../
    :provider: local
+   :contributions:
    :avatars:
    :names:
    :exclude: dependabot[bot]
