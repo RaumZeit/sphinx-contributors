@@ -65,6 +65,7 @@ class ContributorsDirective(Directive):
         "include": directives.unchanged,
         "limit": directives.positive_int,
         "names": directives.flag,
+        "anonymous": directives.flag,
         "order": directives.unchanged,
         "provider": directives.unchanged,
     }
@@ -77,6 +78,8 @@ class ContributorsDirective(Directive):
         class_name = self.options.get("class_name", "sphinx-contributors")
         show_contributions = "contributions" in self.options
         show_names = "names" in self.options
+        anonymous = "anonymous" in self.options
+
         # compile list of additional users to exclude/exclude
         exclude = [
             _exclude.strip() for _exclude in self.options.get("exclude", "").split(",")
@@ -101,7 +104,8 @@ class ContributorsDirective(Directive):
                               include = include,
                               exclude = exclude,
                               rst_dir = rst_dir,
-                              default_avatar = config["default_avatar"])
+                              default_avatar = config["default_avatar"],
+                              anonymous = anonymous)
 
             for k, v in repo.get_contributors().items():
                 if k not in contributors_by_login:

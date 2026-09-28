@@ -154,13 +154,14 @@ def get_local_contributors(repo_name, exclude = [], default_avatar = ""):
 
 
 class Repository:
-    def __init__(self, url, provider = "github", include = [], exclude = [], rst_dir = ".", default_avatar = ""):
+    def __init__(self, url, provider = "github", include = [], exclude = [], rst_dir = ".", default_avatar = "", anonymous = False):
         self.url = url
         self.provider = provider
         self.include = include
         self.exclude = exclude
         self.rst_dir = rst_dir
         self.default_avatar = default_avatar
+        self.anonymous = anonymous
 
     def get_contributors(self):
         """
@@ -171,10 +172,18 @@ class Repository:
         contributors = {}
 
         if self.provider == "github":
-            contributors = get_github_contributors(self.url, self.exclude, self.default_avatar)
+            contributors = get_github_contributors(
+                              repo_name = self.url,
+                              exclude = self.exclude,
+                              anonymous = self.anonymous,
+                              default_avatar = self.default_avatar
+                            )
             get_user_data = get_github_user_data
         elif self.provider == "local":
-            contributors = get_local_contributors(os.path.join(self.rst_dir, self.url), self.exclude, self.default_avatar)
+            contributors = get_local_contributors(
+                              os.path.join(self.rst_dir, self.url),
+                              self.exclude,
+                              self.default_avatar)
 
         if callable(get_user_data):
             # get more contributor data

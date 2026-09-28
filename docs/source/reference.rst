@@ -66,6 +66,11 @@ Contributors directive
 
       Comma separated usernames to exclude from the list of contributors, for example: ``dependabot[bot],pre-commit-ci[bot]``.
 
+    .. rst:directive:option:: anonymous
+      :type: boolean
+
+      Also show ``anonymous`` contributors, i.e. those that appear in the git commit history but are not registered with github
+
     .. note::
 
        The GitHub REST API used by this extension does not include contributors added via ``Co-authored-by`` commit trailers. Use the ``:include:`` option to manually add those contributors.

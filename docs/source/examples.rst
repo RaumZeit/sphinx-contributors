@@ -105,6 +105,19 @@ Manually add contributors not detected by the API (e.g., ``Co-authored-by`` cont
 .. contributors:: dgarcia360/sphinx-contributors
    :include: Peque
 
+Including anonymous contributors
+--------------------------------
+
+Also add contributors that are not linked to a github account:
+
+.. code-block:: rst
+
+   .. contributors:: dgarcia360/sphinx-contributors
+      :anonymous:
+
+.. contributors:: dgarcia360/sphinx-contributors
+   :anonymous:
+
 Multiple repositories
 ---------------------
 
