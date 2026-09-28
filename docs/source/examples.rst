@@ -1,7 +1,7 @@
 Examples
 ========
 
-The ``contributors`` directive renders the contributors of a given GitHub repository in a Sphinx documentation page. This page shows the different options available.
+The ``contributors`` directive renders the contributors of a given GitHub or local git repository in a Sphinx documentation page. This page shows the different options available.
 
 Basic usage
 -----------
@@ -13,6 +13,19 @@ List the contributors from a repository:
    .. contributors:: dgarcia360/sphinx-contributors
 
 .. contributors:: dgarcia360/sphinx-contributors
+
+Local repository
+----------------
+
+List the contributors from a local repository:
+
+.. code-block:: rst
+
+   .. contributors:: ../../
+      :provider: local
+
+.. contributors:: ../../
+    :provider: local
 
 With avatars
 ------------
@@ -137,6 +150,25 @@ Avatars, real names, and contribution counts together:
       :exclude: dependabot[bot]
 
 .. contributors:: dgarcia360/sphinx-contributors
+   :avatars:
+   :names:
+   :exclude: dependabot[bot]
+
+Local Repo with default avatars
+-------------------------------
+
+Avatars, real names, and contribution counts together:
+
+.. code-block:: rst
+
+   .. contributors:: ../../
+      :provider: local
+      :avatars:
+      :names:
+      :exclude: dependabot[bot]
+
+.. contributors:: ../../
+   :provider: local
    :avatars:
    :names:
    :exclude: dependabot[bot]
