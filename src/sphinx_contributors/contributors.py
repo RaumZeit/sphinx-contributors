@@ -18,7 +18,7 @@ class Contributor:
         if isinstance(data, Contributor) and self.login == data.login:
             self.contributions += data.contributions
             self.url = data.url if data.url else self.url
-            self.avatar_url = data.url if data.avatar_url else self.avatar_url
+            self.avatar_url = data.avatar_url if data.avatar_url else self.avatar_url
             self.name = data.name if data.name else self.name
             self.email = data.email if data.email else self.email
 
@@ -45,8 +45,16 @@ class Contributor:
                 return node_container
 
         node_username = nodes.paragraph(classes=[username_class])
-        node_username += nodes.reference(text=self.display_name if not show_login else self.login,
-                                         refuri=self.url)
+
+        login = self.login.replace('@', ' [at] ')  # replace @ by [at]
+
+        if self.url or self.email:
+            url = self.url if self.url else f"mailto:{self.email}"
+            node_username += nodes.reference(text=self.display_name if not show_login else login,
+                                         refuri=url)
+        else:
+            node_username += nodes.Text(self.display_name if not show_login else login)
+
         node_container += node_username
 
         if show_contributions and self.contributions:

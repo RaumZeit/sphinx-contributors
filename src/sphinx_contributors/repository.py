@@ -24,7 +24,12 @@ def _github_get_paginated(url):
     headers = _github_headers()
     while url:
         r = requests.get(url, headers=headers)
-        results.extend(r.json())
+        j = r.json()
+        if 'message' in j:
+            results.append(j)
+            break
+        else:
+            results.extend(r.json())
         url = r.links.get("next", {}).get("url")
     return results
 
@@ -46,6 +51,10 @@ def get_github_contributors(repo_name, exclude = [], anonymous = False, pages = 
             f"https://api.github.com/repos/{repo_name}" \
             f"/contributors?per_page={pages}{'&anon=1' if anonymous else ''}"
         )
+
+        if len(results) > 0 and 'message' in results[0]:
+            logger.warning(f"{results[0]['message']}")
+            raise Exception
 
         for c in results:
             ctype = c.get("type", "User")
@@ -123,14 +132,23 @@ def get_local_contributors(repo_name, exclude = [], default_avatar = ""):
             m = email_pat.match(contributor)
             if m:
                 name, email = m.group(1), m.group(2)
-                contributors[email] = Contributor(
-                    login         = email,
-                    url           = "",
-                    contributions = int(count),
-                    name          = name,
-                    email         = email,
-                    avatar_url    = default_avatar
-                )
+
+                if name in exclude or email in exclude:
+                    continue
+
+                c = Contributor(
+                      login         = email,
+                      url           = "",
+                      contributions = int(count),
+                      name          = name,
+                      email         = email,
+                      avatar_url    = default_avatar
+                    )
+
+                if email in contributors:
+                    contributors[email].update(c)
+                else:
+                    contributors[email] = c
 
     return contributors
 
