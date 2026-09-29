@@ -153,7 +153,7 @@ Control how many contributors are shown and in what order:
 Combining options
 -----------------
 
-Avatars, real names, and contribution counts together:
+Avatars, real names, and exclude list together:
 
 .. code-block:: rst
 
@@ -170,7 +170,7 @@ Avatars, real names, and contribution counts together:
 Local Repo with default avatars
 -------------------------------
 
-Avatars, real names, and contribution counts together:
+Local repository with default avatars, real names, and contribution counts together:
 
 .. code-block:: rst
 
