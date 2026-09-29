@@ -21,7 +21,7 @@ def test_contributor_build() -> None:
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=10).build(
         _CLASS_NAME,
-        show_contributions = True
+        { 'show_contributions' : True }
     )
     assert contributor.astext() == "dgarcia360\n\n10 contributions"
 
@@ -34,7 +34,7 @@ def test_contributor_build_with_name() -> None:
         "dgarcia360", "http://#", contributions=5, name="David Garcia"
     ).build(
         _CLASS_NAME,
-        show_contributions = True
+        { 'show_contributions' : True }
     )
     assert contributor.astext() == "David Garcia\n\n5 contributions"
 
@@ -45,7 +45,7 @@ def test_contributor_build_with_empty_name() -> None:
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=5, name="").build(
         _CLASS_NAME,
-        show_contributions = True
+        { 'show_contributions' : True }
     )
     assert contributor.astext() == "dgarcia360\n\n5 contributions"
 
@@ -56,7 +56,7 @@ def test_contributor_build_with_no_contribution() -> None:
     """
     contributor = Contributor("dgarcia360", "http://#").build(
         _CLASS_NAME,
-        show_contributions = True
+        { 'show_contributions' : True }
     )
     assert contributor.astext() == "dgarcia360"
 
@@ -67,7 +67,7 @@ def test_contributor_build_with_one_contribution() -> None:
     """
     contributor = Contributor("dgarcia360", "http://#", contributions=1).build(
         _CLASS_NAME,
-        show_contributions = True
+        { 'show_contributions' : True }
     )
     assert contributor.astext() == "dgarcia360\n\n1 contribution"
 
@@ -82,8 +82,10 @@ def test_contributor_repository_build() -> None:
     ]
     contributor_repository = ContributorsRepository(
         contributors,
-        reverse=True,
-        show_contributions = True
+        {
+          'reverse' : True,
+          'show_contributions' : True
+        }
     ).build(
         _CLASS_NAME
     )
@@ -98,7 +100,7 @@ def test_contributor_repository_build_empty() -> None:
     Initializing a contributor repository with no contributors.
     """
     contributors = []
-    contributor_repository = ContributorsRepository(contributors, reverse=True).build(
+    contributor_repository = ContributorsRepository(contributors, { 'reverse' : True }).build(
         _CLASS_NAME
     )
     assert contributor_repository.astext() == ""
@@ -114,8 +116,10 @@ def test_contributor_repository_build_order_desc() -> None:
     ]
     contributor_repository = ContributorsRepository(
         contributors,
-        reverse=True,
-        show_contributions = True
+        {
+          'reverse' : True,
+          'show_contributions' : True
+        }
     ).build(
         _CLASS_NAME
     )
@@ -135,8 +139,10 @@ def test_contributor_repository_build_order_asc() -> None:
     ]
     contributor_repository = ContributorsRepository(
         contributors,
-        reverse=False,
-        show_contributions = True
+        {
+          'reverse' : False,
+          'show_contributions' : True
+        }
     ).build(
         _CLASS_NAME
     )
@@ -156,9 +162,11 @@ def test_contributor_repository_build_with_limit() -> None:
     ]
     contributor_repository = ContributorsRepository(
         contributors,
-        reverse=True,
-        limit=1,
-        show_contributions = True
+        {
+          'reverse' : True,
+          'limit' : 1,
+          'show_contributions' : True
+        }
     ).build(
         _CLASS_NAME
     )
@@ -177,10 +185,12 @@ def test_contributor_repository_build_exclude() -> None:
     exclude = "sphinx,user"
     contributor_repository = ContributorsRepository(
         contributors,
-        reverse=True,
-        limit=10,
-        exclude=exclude,
-        show_contributions = True
+        {
+          'reverse' : True,
+          'limit' : 10,
+          'show_contributions' : True,
+          'exclude' : exclude
+        }
     ).build(
         _CLASS_NAME
     )
@@ -228,11 +238,7 @@ def test_multiple_repositories(mock_get) -> None:
     mock_repo2.links = {}
     mock_get.side_effect = [
         mock_repo1,
-        MagicMock(), # skip request for 'shared'
-        MagicMock(), # skip request for 'only_repo1"
         mock_repo2,
-        MagicMock(), # skip request for 'shared'
-        MagicMock()  # skip request for 'only_repo2"
     ]
 
     directive = ContributorsDirective.__new__(ContributorsDirective)
@@ -271,7 +277,6 @@ def test_single_repository_unchanged(mock_get) -> None:
     mock_response.links = {}
     mock_get.side_effect = [
         mock_response,
-        MagicMock() # skip request for 'user1'
     ]
 
     directive = ContributorsDirective.__new__(ContributorsDirective)
@@ -312,7 +317,6 @@ def test_include_adds_new_contributors(mock_get) -> None:
     }
     mock_get.side_effect = [
         mock_repo_response,
-        MagicMock(), # skip request for 'existing'
         mock_user_response
     ]
 

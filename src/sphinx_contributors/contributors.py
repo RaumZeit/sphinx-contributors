@@ -22,15 +22,17 @@ class Contributor:
             self.name = data.name if data.name else self.name
             self.email = data.email if data.email else self.email
 
-    def build(self, class_name, show_avatar = False, avatars_only = False, show_login = False, show_contributions = False):
+    def build(self, class_name, options = {}):
         container_class = class_name + "_contributor"
         image_class = container_class + "__image"
         username_class = container_class + "__username"
         contributions_class = container_class + "__contributions"
+        show_login = options.get('show_login', False)
+        show_contributions = options.get('show_contributions', False)
 
         node_container = nodes.container(classes=[container_class])
 
-        if show_avatar:
+        if options.get('show_avatars', False):
             if self.avatar_url:
                 node_image = nodes.image(
                     uri=self.avatar_url,
@@ -41,7 +43,7 @@ class Contributor:
                 node_image_link += node_image
                 node_container += node_image_link
 
-            if avatars_only:
+            if options.get('avatars_only', False):
                 return node_container
 
         node_username = nodes.paragraph(classes=[username_class])
@@ -71,47 +73,40 @@ class ContributorsRepository:
     def __init__(
         self,
         contributors,
-        reverse = True,
-        limit = None,
-        exclude = [],
-        avatars = False,
-        avatars_only = False,
-        show_names = False,
-        show_contributions = False,
+        options = {},
+        config = {}
     ):
+        reverse = options.get("reverse", False)
+        exclude = options.get('exclude', [])
         sorted_contributors = sorted(
             [c for c in contributors if c.login not in exclude],
             key=lambda c: c.contributions,
             reverse=reverse,
         )
+        limit = options.get("limit", None)
         self.contributors = (
             sorted_contributors[:limit] if limit else sorted_contributors
         )
-        self.avatars = avatars
-        self.avatars_only = avatars_only
-        self.show_names = show_names
-        self.show_contributions = show_contributions
+        self.options = options
+
 
     def build(self, class_name):
         list_class = class_name + "_list"
         item_class = list_class + "__item"
 
         node_container = nodes.container(classes=[class_name])
-        if self.avatars or self.avatars_only:
+
+        if self.options.get('show_avatars', False):
             node_container["classes"].append(class_name + "--avatars")
+
         node_list = nodes.bullet_list(classes=[list_class])
 
         for contributor in self.contributors:
             node_item = nodes.list_item(classes=[item_class])
-            node_item += contributor.build(
-                                        class_name,
-                                        show_avatar = self.avatars,
-                                        avatars_only=self.avatars_only,
-                                        show_login = not self.show_names,
-                                        show_contributions = self.show_contributions
-                                      )
+            node_item += contributor.build(class_name, self.options)
             node_list += node_item
         node_container += node_list
+
         return node_container
 
 
