@@ -17,9 +17,11 @@ Contributors directive
 
     .. code-block:: rst
 
-       .. contributors:: ../
+       .. contributors:: ../../
           :provider: local
           :contributions:
+
+    The latter assumes that your local git repository root resides two levels up from the document this directive has been placed.
 
     .. rst:directive:option:: provider
       :type: string
