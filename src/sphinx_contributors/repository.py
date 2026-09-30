@@ -55,12 +55,12 @@ def get_github_contributors(repo_name, options = {}):
         )
 
         for c in results:
-            ctype = c.get("type", "User")
+            ctype = c.get("type", "")
             anonymous = False
 
             if ctype == "User":
                 login = c.get("login")
-            elif anonymous and ctype == "Anonymous":
+            elif list_anonymous and ctype == "Anonymous":
                 login = c.get("email")
                 anonymous = True
             else:

@@ -211,12 +211,14 @@ def test_multiple_repositories(mock_get) -> None:
             "html_url": "https://github.com/shared",
             "contributions": 3,
             "avatar_url": "",
+            "type": "User"
         },
         {
             "login": "only_repo1",
             "html_url": "https://github.com/only_repo1",
             "contributions": 1,
             "avatar_url": "",
+            "type": "User",
         },
     ]
     mock_repo1.links = {}
@@ -227,12 +229,14 @@ def test_multiple_repositories(mock_get) -> None:
             "html_url": "https://github.com/shared",
             "contributions": 5,
             "avatar_url": "",
+            "type": "User",
         },
         {
             "login": "only_repo2",
             "html_url": "https://github.com/only_repo2",
             "contributions": 2,
             "avatar_url": "",
+            "type": "User",
         },
     ]
     mock_repo2.links = {}
@@ -272,6 +276,7 @@ def test_single_repository_unchanged(mock_get) -> None:
             "html_url": "https://github.com/user1",
             "contributions": 10,
             "avatar_url": "",
+            "type": "User",
         },
     ]
     mock_response.links = {}
@@ -307,6 +312,7 @@ def test_include_adds_new_contributors(mock_get) -> None:
             "html_url": "https://github.com/existing",
             "contributions": 5,
             "avatar_url": "",
+            "type": "User",
         },
     ]
     mock_repo_response.links = {}
@@ -348,6 +354,7 @@ def test_include_does_not_duplicate_existing(mock_get) -> None:
             "html_url": "https://github.com/existing",
             "contributions": 5,
             "avatar_url": "",
+            "type": "User",
         },
     ]
     mock_repo_response.links = {}
@@ -380,6 +387,7 @@ def test_contributor_directive(mock_get, tmp_path: Path) -> None:
             "html_url": "https://github.com/testuser",
             "contributions": 42,
             "avatar_url": "https://github.com/testuser.png",
+            "type": "User",
         },
     ]
     mock_response.links = {}
