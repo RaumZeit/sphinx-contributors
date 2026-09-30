@@ -128,11 +128,14 @@ def _git_shortlog(repo_name):
                             '--numbered',
                             '--email'
                            ],
-                           stdout=subprocess.PIPE)
+                           stdout=subprocess.PIPE,
+                           timeout = 120)
         r.check_returncode()
 
         return r.stdout.decode()
 
+    except subprocess.TimeoutExpired as err:
+        logger.warning(f"git shorlog call timeout for local repo \"{repo_name}\" {err=}, {type(err)=}")
     except subprocess.CalledProcessError as err:
         logger.warning(f"git shorlog call was unsuccessful for local repo \"{repo_name}\" {err=}, {type(err)=}")
     except OSError as err:
@@ -149,8 +152,12 @@ def get_local_contributors(repo_name, options = {}):
     default_avatar = options['default_avatar'] if 'default_avatar' in options else ""
 
     repo_path = os.path.join(rst_dir, repo_name)
+    results = _git_shortlog(repo_path)
 
-    for r in _git_shortlog(repo_path).split("\n"):
+    if results is None:
+        return contributors
+
+    for r in results.split("\n"):
         rr = r.strip().split("\t")
         if len(rr) > 1:
             count, contributor = r.strip().split("\t")
