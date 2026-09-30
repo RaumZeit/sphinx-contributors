@@ -182,7 +182,7 @@ def test_contributor_repository_build_exclude() -> None:
         Contributor("sphinx", "http://#", contributions=1),
         Contributor("user", "http://#", contributions=1),
     ]
-    exclude = "sphinx,user"
+    exclude = [ "sphinx", "user" ]
     contributor_repository = ContributorsRepository(
         contributors,
         {
