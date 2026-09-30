@@ -96,6 +96,7 @@ class ContributorsDirective(Directive):
             # to the other options set by this call of the contributors
             # directive
             'rst_source' : self.state_machine.document.attributes['source'],
+            'limit': self.options.get('limit', None)
         }
 
         contributors_by_login = {}
