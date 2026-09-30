@@ -56,11 +56,13 @@ def get_github_contributors(repo_name, options = {}):
 
         for c in results:
             ctype = c.get("type", "User")
+            anonymous = False
 
             if ctype == "User":
                 login = c.get("login")
             elif anonymous and ctype == "Anonymous":
                 login = c.get("email")
+                anonymous = True
             else:
                 continue
 
@@ -79,7 +81,8 @@ def get_github_contributors(repo_name, options = {}):
                     contributions = contributions,
                     avatar_url    = avatar,
                     name          = name,
-                    email         = email
+                    email         = email,
+                    anonymous     = anonymous
                 )
     except requests.exceptions.HTTPError as err:
         logger.warning(f"Error while retrieving data from github repository \"{repo_name}\" {err=}, {type(err)=}")
@@ -107,7 +110,8 @@ def get_github_user_data(login, options = {}):
                     contributions = 0,
                     avatar_url    = user.get("avatar_url", options.get('default_avatar', "")),
                     name          = user.get("name", ""),
-                    email         = user.get("email", "")
+                    email         = user.get("email", ""),
+                    anonymous     = False
                 )
     except requests.exceptions.HTTPError as err:
         logger.warning(f"Error while retrieving user data for github login \"{login}\" {err=}, {type(err)=}")
@@ -163,7 +167,8 @@ def get_local_contributors(repo_name, options = {}):
                       contributions = int(count),
                       name          = name,
                       email         = email,
-                      avatar_url    = default_avatar
+                      avatar_url    = default_avatar,
+                      anonymous     = True
                     )
 
                 if email in contributors:
@@ -203,6 +208,10 @@ class Repository:
             # get more contributor data
             if self.options.get("show_names", False):
                 for login in contributors.keys():
+                    # skip lookup for anonymous contributors
+                    if contributors[login].anonymous:
+                        continue
+
                     d = self._fill_user_data(login, options = self.options)
                     if d:
                         contributors[login].update(d)
