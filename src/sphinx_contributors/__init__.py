@@ -38,6 +38,9 @@ def sc_path_static_append(app) :
                                                 )
                                              ).as_posix()
 
+    # manually register the default image so that it works with latex builder
+    app.env.images.add_file('', contributors_config['default_avatar'])
+
 
 def fill_contributors_conf_defaults(app, config, check_keys = True):
     """Handle user config"""
