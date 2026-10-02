@@ -25,9 +25,9 @@
 }
 
 .sphinx-contributors--avatars .sphinx-contributors_contributor__image {
+    display: block;
+    margin: auto;
     margin-top: 10px;
-    width: 150px;
-    height: 150px;
     object-fit: cover;
 }
 

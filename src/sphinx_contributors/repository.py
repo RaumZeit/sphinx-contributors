@@ -10,6 +10,9 @@ from .contributors import Contributor
 logger = logging.getLogger(__name__)
 
 email_pat = re.compile(r"(.*)\s+\<(.*)\>")
+github_email_pat = re.compile(r"(\d+\+)?(.*)@users\.noreply\.github\.com")
+
+GITHUB_REPO_URL="https://github.com"
 
 
 def _github_headers():
@@ -33,6 +36,15 @@ def _github_get_paginated(url):
     return results
 
 
+def _strip_github_email(email):
+    m = github_email_pat.match(email)
+
+    if m and m.group(2):
+        return m.group(2)
+
+    return email
+
+
 def get_github_contributors(repo_name, options = {}):
     """
     Get all contributors from a github repository
@@ -46,7 +58,6 @@ def get_github_contributors(repo_name, options = {}):
     contributors = {}
     list_anonymous = options.get('anonymous', False)
     exclude = options.get('exclude', [])
-    default_avatar = options.get('default_avatar', "")
 
     try:
         results = _github_get_paginated(
@@ -72,7 +83,7 @@ def get_github_contributors(repo_name, options = {}):
             html_url = c.get("html_url")
             contributions = c.get("contributions", 0)
             email = c.get("email", "")
-            avatar = c.get("avatar_url", default_avatar)
+            avatar = c.get("avatar_url", "")
             name = c.get("name", "")
 
             contributors[login] = Contributor(
@@ -82,7 +93,8 @@ def get_github_contributors(repo_name, options = {}):
                     avatar_url    = avatar,
                     name          = name,
                     email         = email,
-                    anonymous     = anonymous
+                    anonymous     = anonymous,
+                    source        = GITHUB_REPO_URL + "/" + repo_name
                 )
     except requests.exceptions.HTTPError as err:
         logger.warning(f"Error while retrieving data from github repository \"{repo_name}\" {err=}, {type(err)=}")
@@ -108,10 +120,11 @@ def get_github_user_data(login, options = {}):
                     login         = login,
                     url           = user.get("html_url", "https://github.com/" + login),
                     contributions = 0,
-                    avatar_url    = user.get("avatar_url", options.get('default_avatar', "")),
+                    avatar_url    = user.get("avatar_url", ""),
                     name          = user.get("name", ""),
                     email         = user.get("email", ""),
-                    anonymous     = False
+                    anonymous     = False,
+                    source        = 'github-user'
                 )
     except requests.exceptions.HTTPError as err:
         logger.warning(f"Error while retrieving user data for github login \"{login}\" {err=}, {type(err)=}")
@@ -149,7 +162,6 @@ def get_local_contributors(repo_name, options = {}):
 
     rst_dir = options['rst_dir'] if 'rst_dir' in options else '.'
     exclude = options['exclude'] if 'exclude' in options else []
-    default_avatar = options['default_avatar'] if 'default_avatar' in options else ""
 
     repo_path = os.path.join(rst_dir, repo_name)
     results = _git_shortlog(repo_path)
@@ -164,24 +176,38 @@ def get_local_contributors(repo_name, options = {}):
             m = email_pat.match(contributor)
             if m:
                 name, email = m.group(1), m.group(2)
+                url = ""
+                anonymous = True
+                login = email
+                source = repo_name
 
-                if name in exclude or email in exclude:
+                # test whether this might have been a github user
+                # contributing via the github web interface
+                email_stripped = _strip_github_email(email)
+                if email != email_stripped:
+                    anonymous = False
+                    login = email_stripped
+                    email = ""
+                    url = f"https://github.com/{login}"
+                    source = [ source, 'github' ]
+
+                if (name and name in exclude) or (email and email in exclude):
                     continue
 
                 c = Contributor(
-                      login         = email,
-                      url           = "",
+                      login         = login,
+                      url           = url,
                       contributions = int(count),
                       name          = name,
                       email         = email,
-                      avatar_url    = default_avatar,
-                      anonymous     = True
+                      anonymous     = anonymous,
+                      source        = source
                     )
 
-                if email in contributors:
-                    contributors[email].update(c)
+                if login in contributors:
+                    contributors[login].update(c)
                 else:
-                    contributors[email] = c
+                    contributors[login] = c
 
     return contributors
 
