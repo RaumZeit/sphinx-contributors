@@ -1,5 +1,6 @@
 from docutils import nodes
 
+from .all_contributors import default_types
 
 class Contributor:
     def __init__(self, login, url, contributions=0, avatar_url="", name="", email="", aliases = [], anonymous = True, source = []):
