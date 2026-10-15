@@ -167,11 +167,16 @@ class Contributor:
                 # show only the contribution types without any details
                 contrib = []
                 for c in self.contributions:
+                    emoji = None
                     ctype = c if isinstance(c, str) else c['type']
 
                     known_contributions = ac_types()
                     if ctype in known_contributions:
+                        emoji = known_contributions[ctype]['symbol']
                         ctype = known_contributions[ctype]['description']
+
+                    if 'emoji' in show_contributions and emoji:
+                        contrib.append(nodes.Text(emoji + " "))
 
                     contrib.append(ctype)
 
@@ -183,10 +188,12 @@ class Contributor:
                     defs = []
 
                     for c in self.contributions:
+                        emoji = None
                         ctype = c if isinstance(c, str) else c['type']
 
                         known_contributions = ac_types()
                         if ctype in known_contributions:
+                            emoji = known_contributions[ctype]['symbol']
                             ctype = known_contributions[ctype]['description']
                         elif 'all' not in show_contributions:
                             # skip unknown / non-standard contributions if not requested otherwise
@@ -208,6 +215,9 @@ class Contributor:
                                         items.append(nodes.paragraph("", "", nodes.Text(str(k) + ": " + f"{v}")))
 
                         term = nodes.term("", nodes.Text(ctype))
+                        if 'emoji' in show_contributions and emoji:
+                            term = nodes.term("", nodes.Text(emoji + " " + ctype))
+
                         definition = nodes.definition("", *items)
                         df = nodes.definition_list_item("", term, definition)
                         defs.append(df)
@@ -218,10 +228,12 @@ class Contributor:
                     # create a bullet_list instead
                     items = []
                     for c in self.contributions:
+                        emoji = None
                         ctype = c if isinstance(c, str) else c['type']
 
                         known_contributions = ac_types()
                         if ctype in known_contributions:
+                            emoji = known_contributions[ctype]['symbol']
                             ctype = known_contributions[ctype]['description']
                         elif 'all' not in show_contributions:
                             # skip unknown / non-standard contributions if not requested otherwise
@@ -245,7 +257,13 @@ class Contributor:
 
                         title = nodes.strong("", nodes.Text(f"{ctype}{':' if text or details else ''}"))
 
-                        children = [ title ]
+                        children = []
+
+                        if 'emoji' in show_contributions and emoji:
+                            children.append(nodes.Text(emoji + " "))
+
+                        children.append(title)
+
                         if text:
                             children.append(nodes.Text(" " + text))
                         if details:
