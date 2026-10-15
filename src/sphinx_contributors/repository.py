@@ -7,7 +7,6 @@ from sphinx.util import logging
 
 from .contributors import Contributor
 
-logger = logging.getLogger(__name__)
 
 email_pat = re.compile(r"(.*)\s+\<(.*)\>")
 github_email_pat = re.compile(r"(\d+\+)?(.*)@users\.noreply\.github\.com")
@@ -59,6 +58,8 @@ def get_github_contributors(repo_name, options = {}):
     list_anonymous = options.get('anonymous', False)
     exclude = options.get('exclude', [])
 
+    from . import logger as log
+
     try:
         results = _github_get_paginated(
             f"https://api.github.com/repos/{repo_name}" \
@@ -89,7 +90,7 @@ def get_github_contributors(repo_name, options = {}):
             contributors[login] = Contributor(
                     login         = login,
                     url           = html_url,
-                    contributions = contributions,
+                    contributions = int(contributions),
                     avatar_url    = avatar,
                     name          = name,
                     email         = email,
@@ -97,14 +98,17 @@ def get_github_contributors(repo_name, options = {}):
                     source        = GITHUB_REPO_URL + "/" + repo_name
                 )
     except requests.exceptions.HTTPError as err:
-        logger.warning(f"Error while retrieving data from github repository \"{repo_name}\" {err=}, {type(err)=}")
+        log.warning(f"Error while retrieving data from github repository \"{repo_name}\" {err=}, {type(err)=}")
     except Exception as err:
-        logger.warning(f"Error while decoding data from github repository \"{repo_name}\" {err=}, {type(err)=}")
+        log.warning(f"Error while decoding data from github repository \"{repo_name}\" {err=}, {type(err)=}")
 
     return contributors
 
 
 def get_github_user_data(login, options = {}):
+
+    from . import logger as log
+
     try:
         r = requests.get(
             "https://api.github.com/users/" + login,
@@ -116,10 +120,10 @@ def get_github_user_data(login, options = {}):
 
         user = r.json()
 
+
         return Contributor(
                     login         = login,
                     url           = user.get("html_url", "https://github.com/" + login),
-                    contributions = 0,
                     avatar_url    = user.get("avatar_url", ""),
                     name          = user.get("name", ""),
                     email         = user.get("email", ""),
@@ -127,12 +131,15 @@ def get_github_user_data(login, options = {}):
                     source        = 'github-user'
                 )
     except requests.exceptions.HTTPError as err:
-        logger.warning(f"Error while retrieving user data for github login \"{login}\" {err=}, {type(err)=}")
+        log.warning(f"Error while retrieving user data for github login \"{login}\" {err=}, {type(err)=}")
 
     return None
 
 
 def _git_shortlog(repo_name):
+
+    from . import logger as log
+
     try:
         r = subprocess.run(['git',
                             '-C', repo_name,
@@ -148,11 +155,11 @@ def _git_shortlog(repo_name):
         return r.stdout.decode()
 
     except subprocess.TimeoutExpired as err:
-        logger.warning(f"git shorlog call timeout for local repo \"{repo_name}\" {err=}, {type(err)=}")
+        log.warning(f"git shorlog call timeout for local repo \"{repo_name}\" {err=}, {type(err)=}")
     except subprocess.CalledProcessError as err:
-        logger.warning(f"git shorlog call was unsuccessful for local repo \"{repo_name}\" {err=}, {type(err)=}")
+        log.warning(f"git shorlog call was unsuccessful for local repo \"{repo_name}\" {err=}, {type(err)=}")
     except OSError as err:
-        logger.warning(f"Error while calling git shortlog for local repo \"{repo_name}\" {err=}, {type(err)=}")
+        log.warning(f"Error while calling git shortlog for local repo \"{repo_name}\" {err=}, {type(err)=}")
 
     return None
 
@@ -260,3 +267,4 @@ class Repository:
                     contributors[login] = d
 
         return contributors
+

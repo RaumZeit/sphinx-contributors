@@ -23,7 +23,7 @@ def test_contributor_build() -> None:
         _CLASS_NAME,
         { 'show_contributions' : True }
     )
-    assert contributor.astext() == "dgarcia360\n\n10 contributions"
+    assert contributor.astext() == "dgarcia360\n\nCode:\n\n (commits: 10)"
 
 
 def test_contributor_build_with_name() -> None:
@@ -36,7 +36,7 @@ def test_contributor_build_with_name() -> None:
         _CLASS_NAME,
         { 'show_contributions' : True }
     )
-    assert contributor.astext() == "David Garcia\n\n5 contributions"
+    assert contributor.astext() == "David Garcia\n\nCode:\n\n (commits: 5)"
 
 
 def test_contributor_build_with_empty_name() -> None:
@@ -47,7 +47,7 @@ def test_contributor_build_with_empty_name() -> None:
         _CLASS_NAME,
         { 'show_contributions' : True }
     )
-    assert contributor.astext() == "dgarcia360\n\n5 contributions"
+    assert contributor.astext() == "dgarcia360\n\nCode:\n\n (commits: 5)"
 
 
 def test_contributor_build_with_no_contribution() -> None:
@@ -69,7 +69,7 @@ def test_contributor_build_with_one_contribution() -> None:
         _CLASS_NAME,
         { 'show_contributions' : True }
     )
-    assert contributor.astext() == "dgarcia360\n\n1 contribution"
+    assert contributor.astext() == "dgarcia360\n\nCode:\n\n (commits: 1)"
 
 
 def test_contributor_repository_build() -> None:
@@ -91,7 +91,7 @@ def test_contributor_repository_build() -> None:
     )
     assert (
         contributor_repository.astext()
-        == "dgarcia360\n\n2 contributions\n\nuser\n\n1 contribution"
+        == "dgarcia360\n\nCode:\n\n (commits: 2)\n\nuser\n\nCode:\n\n (commits: 1)"
     )
 
 
@@ -117,6 +117,7 @@ def test_contributor_repository_build_order_desc() -> None:
     contributor_repository = ContributorsRepository(
         contributors,
         {
+          'sort_by' : 'commit',
           'reverse' : True,
           'show_contributions' : True
         }
@@ -125,7 +126,7 @@ def test_contributor_repository_build_order_desc() -> None:
     )
     assert (
         contributor_repository.astext()
-        == "dgarcia360\n\n2 contributions\n\nuser\n\n1 contribution"
+        == "dgarcia360\n\nCode:\n\n (commits: 2)\n\nuser\n\nCode:\n\n (commits: 1)"
     )
 
 
@@ -140,6 +141,7 @@ def test_contributor_repository_build_order_asc() -> None:
     contributor_repository = ContributorsRepository(
         contributors,
         {
+          'sort_by' : 'commit',
           'reverse' : False,
           'show_contributions' : True
         }
@@ -148,7 +150,7 @@ def test_contributor_repository_build_order_asc() -> None:
     )
     assert (
         contributor_repository.astext()
-        == "user\n\n1 contribution\n\ndgarcia360\n\n2 contributions"
+        == "user\n\nCode:\n\n (commits: 1)\n\ndgarcia360\n\nCode:\n\n (commits: 2)"
     )
 
 
@@ -170,7 +172,7 @@ def test_contributor_repository_build_with_limit() -> None:
     ).build(
         _CLASS_NAME
     )
-    assert contributor_repository.astext() == "dgarcia360\n\n2 contributions"
+    assert contributor_repository.astext() == "dgarcia360\n\nCode:\n\n (commits: 2)"
 
 
 def test_contributor_repository_build_exclude() -> None:
@@ -194,7 +196,7 @@ def test_contributor_repository_build_exclude() -> None:
     ).build(
         _CLASS_NAME
     )
-    assert contributor_repository.astext() == "dgarcia360\n\n2 contributions"
+    assert contributor_repository.astext() == "dgarcia360\n\nCode:\n\n (commits: 2)"
 
 
 @patch("sphinx_contributors.repository.requests.get")
@@ -257,7 +259,7 @@ def test_multiple_repositories(mock_get) -> None:
     text = result[0].astext()
     mock_get.assert_called()
     assert "shared" in text
-    assert "8 contributions" in text
+    assert "commits: 8" in text
     assert "only_repo1" in text
     assert "only_repo2" in text
 

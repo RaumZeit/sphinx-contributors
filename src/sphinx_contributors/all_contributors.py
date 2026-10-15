@@ -144,12 +144,15 @@ def default_types(repo = None):
 
 
 def _parse_allcontributors_json(filename):
+
+    from . import logger as log
+
     try:
         with open(filename, "r", encoding='utf-8') as f:
             return json.load(f)
 
     except Exception as err:
-        print(f"Can't access all-contributors json file \"{filename}\" {err=}, {type(err)=}")
+        log.warning(f"Can't access all-contributors json file \"{filename}\" {err=}, {type(err)=}")
         pass
 
     return {}

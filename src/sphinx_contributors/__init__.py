@@ -17,6 +17,7 @@ from .contributors import Contributor, ContributorsRepository
 from .repository import Repository
 from .all_contributors import AllContributors
 
+logger = logging.getLogger(__name__)
 
 DEFAULT_CONTRIBUTORS_CONF = {
     "avatar_image_default" : "sc_user_avartar_default.svg",
@@ -24,7 +25,7 @@ DEFAULT_CONTRIBUTORS_CONF = {
     "all_contributors" : False,
     "all_contributors_file" : ".all-contributorsrc",
     "all_contributors_imageSize_ignore" : False,
-    "all_contributors_precedence" : [ "name", "avatar_url", "email", "profile" ]
+    "all_contributors_precedence" : [ "name", "avatar_url", "email", "profile" ],
 }
 
 
@@ -75,7 +76,7 @@ class ContributorsDirective(Directive):
         "avatars": directives.flag,
         "avatars_only": directives.flag,
         "class_name": directives.unchanged,
-        "contributions": directives.flag,
+        "contributions": directives.unchanged,
         "exclude": directives.unchanged,
         "include": directives.unchanged,
         "limit": directives.positive_int,
@@ -95,6 +96,8 @@ class ContributorsDirective(Directive):
 
         if "byContribution" in order:
             sort_by = 'contribution'
+        if "byCommit" in order:
+            sort_by = 'commit'
         elif "byName" in order:
             sort_by = 'name'
         elif "byLogin" in order:
@@ -122,7 +125,7 @@ class ContributorsDirective(Directive):
                         if self.state_machine.document.attributes['source'] else ".",
             'anonymous' :  "anonymous" in self.options,
             'show_names' : "names" in self.options,
-            'show_contributions' : "contributions" in self.options,
+            'show_contributions' : self.options.get('contributions', False),
             'avatars_only' : "avatars_only" in self.options,
             'show_avatars' : "avatars" in self.options or "avatars_only" in self.options,
             'default_avatar' : config.get('avatar_image_default', ""),
@@ -156,6 +159,7 @@ class ContributorsDirective(Directive):
                                    email = c.get('email',""),
                                    name = c.get('name',""),
                                    aliases = c.get('aliases', []),
+                                   contributions = c.get('contributions', []),
                                    source = '.all-contributorsrc'
                                  ) for i, c in enumerate(config['all_contributors_data'].contributors)
                                }
