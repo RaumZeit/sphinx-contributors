@@ -6,6 +6,12 @@
     text-align: left;
 }
 
+.sphinx-contributors_contributor__contributions ul {
+    list-style-type: none;
+    padding: 10px;
+    padding-top: 0px;
+}
+
 .sphinx-contributors--avatars .sphinx-contributors_list {
     display: flex;
     flex-wrap: wrap;
