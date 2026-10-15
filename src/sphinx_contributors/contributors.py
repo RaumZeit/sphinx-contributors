@@ -175,12 +175,19 @@ class Contributor:
                         emoji = known_contributions[ctype]['symbol']
                         ctype = known_contributions[ctype]['description']
 
-                    if 'emoji' in show_contributions and emoji:
-                        contrib.append(nodes.Text(emoji + " "))
+                    text = ""
+                    if emoji and [ e for e in show_contributions if e in ('emoji', 'emojis-only') ]:
+                        text += emoji + " "
 
-                    contrib.append(ctype)
+                    if emoji == None or 'emojis-only' not in show_contributions:
+                        text += ctype
 
-                contributions.append(nodes.Text(", ".join(contrib)))
+                    contrib.append(text)
+
+                if [ e for e in show_contributions if e in ('emoji', 'emojis-only') ]:
+                    contributions.append(nodes.Text(" ".join(contrib)))
+                else:
+                    contributions.append(nodes.Text(", ".join(contrib)))
             else: 
                 # show detailed contributions
                 if 'deflist' in show_contributions:
@@ -215,7 +222,7 @@ class Contributor:
                                         items.append(nodes.paragraph("", "", nodes.Text(str(k) + ": " + f"{v}")))
 
                         term = nodes.term("", nodes.Text(ctype))
-                        if 'emoji' in show_contributions and emoji:
+                        if emoji and [ e for e in show_contributions if e in ('emoji', 'emojis-only') ]:
                             term = nodes.term("", nodes.Text(emoji + " " + ctype))
 
                         definition = nodes.definition("", *items)
@@ -259,10 +266,11 @@ class Contributor:
 
                         children = []
 
-                        if 'emoji' in show_contributions and emoji:
+                        if emoji and [ e for e in show_contributions if e in ('emoji', 'emojis-only') ]:
                             children.append(nodes.Text(emoji + " "))
 
-                        children.append(title)
+                        if emoji == None or 'emojis-only' not in show_contributions:
+                            children.append(title)
 
                         if text:
                             children.append(nodes.Text(" " + text))
